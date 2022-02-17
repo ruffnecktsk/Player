@@ -200,16 +200,16 @@ open class Player: UIViewController {
     }
 
     /// Pauses playback automatically when resigning active.
-    open var playbackPausesWhenResigningActive: Bool = true
+    open var playbackPausesWhenResigningActive: Bool = false
 
     /// Pauses playback automatically when backgrounded.
-    open var playbackPausesWhenBackgrounded: Bool = true
+    open var playbackPausesWhenBackgrounded: Bool = false
 
     /// Resumes playback when became active.
-    open var playbackResumesWhenBecameActive: Bool = true
+    open var playbackResumesWhenBecameActive: Bool = false
 
     /// Resumes playback when entering foreground.
-    open var playbackResumesWhenEnteringForeground: Bool = true
+    open var playbackResumesWhenEnteringForeground: Bool = false
 
     // state
     
@@ -378,6 +378,16 @@ open class Player: UIViewController {
 
     public convenience init() {
         self.init(nibName: nil, bundle: nil)
+        
+        let session = AVAudioSession.sharedInstance()
+        do {
+            // Configure the audio session for movie playback
+            try session.setCategory(AVAudioSession.Category.playback,
+                                    mode: AVAudioSession.Mode.moviePlayback,
+                                    options: [])
+        } catch let error as NSError {
+            print("Failed to set the audio session category and mode: \(error.localizedDescription)")
+        }
     }
 
     public required init?(coder aDecoder: NSCoder) {
@@ -762,12 +772,15 @@ extension Player {
         if self.playbackState == .paused && self.playbackResumesWhenBecameActive {
             self.play()
         }
+        self._playerView.player = self._avplayer
     }
 
     @objc internal func handleApplicationDidEnterBackground(_ aNotification: Notification) {
         if self.playbackState == .playing && self.playbackPausesWhenBackgrounded {
             self.pause()
         }
+        
+        _playerView.player = nil
     }
 
     @objc internal func handleApplicationWillEnterForeground(_ aNoticiation: Notification) {
